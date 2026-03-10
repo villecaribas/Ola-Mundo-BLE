@@ -30,6 +30,11 @@ class BLEServer:
         ((self._handle,),) = self._ble.gatts_register_services((_LED_SERVICE,))
         self._connections = set()
         self._advertise(name)
+        print("\n\n\033[1;34m"+name+"\033[0m está pronto para missão.\n")
+
+    def _advertise(self, name):
+        name = bytes(name, 'utf-8')
+        self._ble.gap_advertise(100, adv_data=b'\x02\x01\x06' + chr(len(name) + 1) + '\x09' + name)
 
     def _irq(self, event, data):
         if event == _IRQ_CENTRAL_CONNECT:
@@ -38,11 +43,11 @@ class BLEServer:
             print("\033[1;33mConexao OK!!\33[0m")
             
         elif event == _IRQ_CENTRAL_DISCONNECT:
+            print("\033[1;31mConexao FECHADA!!\33[0m")
             conn_handle, _, _ = data
             self._connections.remove(conn_handle)            
-            print("\033[1;31mConexao FECHADA!!\33[0m")
             self._advertise(nomeDoLino)  # Reanuncia
-            print("\033[1;34m"+nomeDoLino+"\033[0m está pronto para missão.")
+            print("\033[1;34m"+nomeDoLino+"\033[0m está pronto reconectar.")
 
         elif event == _IRQ_GATT_WRITE:
             conn_handle, value_handle = data
@@ -54,10 +59,6 @@ class BLEServer:
                 print(f"(← {cmd}) DESLIGA LED1")
             else:
                 print(f"(← {cmd}) não reconhecido)")
-
-    def _advertise(self, name):
-        name = bytes(name, 'utf-8')
-        self._ble.gap_advertise(100, adv_data=b'\x02\x01\x06' + chr(len(name) + 1) + '\x09' + name)
 
 # Inicia o servidor
 ble_server = BLEServer(nomeDoLino)

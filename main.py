@@ -53,6 +53,8 @@ class BLEServer:
             conn_handle, value_handle = data
             value = self._ble.gatts_read(self._handle)
             cmd = value.decode('utf-8').strip()
+
+            ## Processa o comando recebido
             if cmd == "l11":
                 print(f"(← {cmd}) LIGA LED1")
             elif cmd == "l10":

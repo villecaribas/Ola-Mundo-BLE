@@ -2,6 +2,11 @@ from time import sleep, sleep_ms
 import bluetooth
 from machine import Pin
 from micropython import const
+import led_eureka
+
+
+
+led = led_eureka.LEDPTK(15)  # LED conectado ao pino 2
 
 
 # UUIDs para o serviço e característica (use UUIDs personalizados ou padrões)
@@ -57,7 +62,9 @@ class BLEServer:
             ## Processa o comando recebido
             if cmd == "l11":
                 print(f"(← {cmd}) LIGA LED1")
+                led.liga()
             elif cmd == "l10":
+                led.desliga()
                 print(f"(← {cmd}) DESLIGA LED1")
             else:
                 print(f"(← {cmd}) não reconhecido)")

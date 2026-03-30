@@ -10,3 +10,10 @@ class LEDPTK:
 
     def desliga(self):
         self.led.off()
+
+    def pisca(self, n, tempo):
+        for _ in range(n):
+            self.led.on()
+            time.sleep(tempo)
+            self.led.off()
+            time.sleep(tempo)

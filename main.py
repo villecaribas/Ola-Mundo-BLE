@@ -2,12 +2,14 @@ from time import sleep, sleep_ms
 import bluetooth
 from machine import Pin
 from micropython import const
-import led_eureka
+from servo_eureka import ServoPTK
+
+# import led_eureka
+from led_eureka import LEDPTK
 
 
-
-led = led_eureka.LEDPTK(15)  # LED conectado ao pino 2
-
+led = LEDPTK(15)  # LED conectado ao pino 2
+servo = ServoPTK(26)  # Servo conectado ao pino 1
 
 # UUIDs para o serviço e característica (use UUIDs personalizados ou padrões)
 _IRQ_CENTRAL_CONNECT = const(1)
@@ -61,11 +63,29 @@ class BLEServer:
 
             ## Processa o comando recebido
             if cmd == "l11":
-                print(f"(← {cmd}) LIGA LED1")
                 led.liga()
+                print(f"(← {cmd}) LIGA LED1")
             elif cmd == "l10":
                 led.desliga()
                 print(f"(← {cmd}) DESLIGA LED1")
+            elif cmd.startswith("pisca"):
+                try:
+                    _, n, tempo = cmd.split()
+                    n = int(n)
+                    tempo = float(tempo)
+                    print(f"(← {cmd}) PISCA LED1 {n} vezes com {tempo}s de intervalo")
+                    led.pisca(n, tempo)
+                except Exception as e:
+                    print(f"(← {cmd}) comando de piscar inválido: {e}")
+            elif cmd.startswith("servo"):
+                try:
+                    _, angle = cmd.split()
+                    angle = int(angle)
+                    print(f"(← {cmd}) MOVIMENTA SERVO para {angle}°")
+                    # Aqui você pode chamar a função para movimentar o servo, ex:
+                    servo.write_angle(angle)
+                except Exception as e:
+                    print(f"(← {cmd}) comando de servo inválido: {e}")
             else:
                 print(f"(← {cmd}) não reconhecido)")
 

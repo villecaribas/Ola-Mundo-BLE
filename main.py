@@ -7,7 +7,7 @@ from servo_eureka import ServoPTK
 # import led_eureka
 from led_eureka import LEDPTK
 
-
+#LED BUITIN
 led = LEDPTK(15)  # LED conectado ao pino 2
 servo = ServoPTK(26)  # Servo conectado ao pino 1
 

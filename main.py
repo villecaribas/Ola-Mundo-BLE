@@ -3,6 +3,7 @@ import bluetooth
 from machine import Pin
 from micropython import const
 from servo_eureka import ServoPTK
+import Motor_DC
 
 # import led_eureka
 from led_eureka import LEDPTK
@@ -88,6 +89,13 @@ class BLEServer:
                     print(f"(← {cmd}) comando de servo inválido: {e}")
             else:
                 print(f"(← {cmd}) não reconhecido)")
+
+motor = MotorDC(pin_pwm=4, pin_dir=27)
+ble_motor = MotorBLE(motor)
+
+while True:
+    ble_motor.loop()
+    time.sleep(0.1)
 
 # Inicia o servidor
 ble_server = BLEServer(nomeDoLino)

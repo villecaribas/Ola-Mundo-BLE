@@ -3,7 +3,7 @@ import bluetooth
 from machine import Pin
 from micropython import const
 from EurekaServo import EurekaServo
-import Buzzer_eurekaS
+import Buzzer_eureka
 # import led_eureka
 from led_eureka import LEDPTK
     

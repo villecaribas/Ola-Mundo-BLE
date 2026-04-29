@@ -3,6 +3,7 @@ import bluetooth
 from machine import Pin
 from micropython import const
 from servo_eureka import ServoPTK
+from Botao_eureka import Botao
 
 # import led_eureka
 from led_eureka import LEDPTK

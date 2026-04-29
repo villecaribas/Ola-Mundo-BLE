@@ -3,7 +3,7 @@ import bluetooth
 from machine import Pin
 from micropython import const
 from EurekaServo import EurekaServo
-import Buzzer_eurekaS
+import Buzzer_eureka
 # import led_eureka
 from led_eureka import LEDPTK
     
@@ -98,13 +98,6 @@ class BLEServer:
             else:
                 print(f"(← {cmd}) não reconhecido)")
 
-motor = MotorDC(pin_pwm=4, pin_dir=27)
-ble_motor = MotorBLE(motor)
-
-while True:
-    ble_motor.loop()
-    time.sleep(0.1)
 
 # Inicia o servidor
 ble_server = BLEServer(nomeDoLino)
-

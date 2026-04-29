@@ -2,14 +2,14 @@ from time import sleep, sleep_ms
 import bluetooth
 from machine import Pin
 from micropython import const
-from servo_eureka import ServoPTK
+from EurekaServo import EurekaServo
 import Buzzer_eurekaS
 # import led_eureka
 from led_eureka import LEDPTK
     
 #LED BUITIN
 led = LEDPTK(15)  # LED conectado ao pino 2
-servo = ServoPTK(26)  # Servo conectado ao pino 1
+servoPTK = EurekaServo(26)
 buzzer_eureka = Buzzer_eureka.BuzzerPTK(32) # Buzzer conectado ao pino 0
 # UUIDs para o serviço e característica (use UUIDs personalizados ou padrões)
 _IRQ_CENTRAL_CONNECT = const(1)
@@ -83,7 +83,7 @@ class BLEServer:
                     angle = int(angle)
                     print(f"(← {cmd}) MOVIMENTA SERVO para {angle}°")
                     # Aqui você pode chamar a função para movimentar o servo, ex:
-                    servo.write_angle(angle)
+                    servoPTK.set_angle(angle)
                 except Exception as e:
                     print(f"(← {cmd}) comando de servo inválido: {e}")
             

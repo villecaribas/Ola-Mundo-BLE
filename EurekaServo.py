@@ -1,7 +1,7 @@
 from machine import Pin, PWM
 import time
 
-class Servo:
+class EurekaServo:
     def __init__(self, pin):
         self.pwm = PWM(Pin(pin))
         self.pwm.freq(50)
@@ -23,9 +23,3 @@ class Servo:
             self.set_angle(angle)
             time.sleep(delay)
 
-
-# ===== Programa principal =====
-servo = Servo(pin=15)
-
-while True:
-    servo.sweep(0.3)

@@ -3,15 +3,14 @@ import bluetooth
 from machine import Pin
 from micropython import const
 from servo_eureka import ServoPTK
-import Motor_DC
-
+import Buzzer_eurekaS
 # import led_eureka
 from led_eureka import LEDPTK
-
+    
 #LED BUITIN
 led = LEDPTK(15)  # LED conectado ao pino 2
 servo = ServoPTK(26)  # Servo conectado ao pino 1
-
+buzzer_eureka = Buzzer_eureka.BuzzerPTK(32) # Buzzer conectado ao pino 0
 # UUIDs para o serviço e característica (use UUIDs personalizados ou padrões)
 _IRQ_CENTRAL_CONNECT = const(1)
 _IRQ_CENTRAL_DISCONNECT = const(2)
@@ -87,6 +86,17 @@ class BLEServer:
                     servo.write_angle(angle)
                 except Exception as e:
                     print(f"(← {cmd}) comando de servo inválido: {e}")
+            
+            # Buzzer - Murilo Santos Bezerra
+            elif cmd.startswith("pwb;"):
+                for nome in musicas.keys():
+                    if cmd.endswith(nome):
+                        print(f"(← {cmd}) TOCA MÚSICA {nome}")
+                        buzzer_eureka.toca_musica(musicas[nome])
+                        break
+                if not any(cmd.endswith(nome) for nome in musicas.keys()):
+                    print(f"(← {cmd}) música não encontrada)")
+                
             else:
                 print(f"(← {cmd}) não reconhecido)")
 
@@ -99,3 +109,4 @@ while True:
 
 # Inicia o servidor
 ble_server = BLEServer(nomeDoLino)
+

@@ -1,22 +1,24 @@
 from machine import Pin, PWM
 import time
 
-megalovania = "Megalovania:d=4,o=5,b=120:\
+musicas = {
+    "megalovania": "Megalovania:d=4,o=5,b=120:\
 d,d,d6,p,a,8p,g#,p,g,p,f,p,d,f,g,\
 c,c,d6,p,a,8p,g#,p,g,p,f,p,d,f,g,\
 b4,b4,d6,p,a,8p,g#,p,g,p,f,p,d,f,g,\
-a#4,a#4,d6,p,a,8p,g#,p,g,p,f,p,d,f,g"
-starwars = "StarWars:d=4,o=5,b=45:\
+a#4,a#4,d6,p,a,8p,g#,p,g,p,f,p,d,f,g",
+    "starwars": "StarWars:d=4,o=5,b=45:\
 32p,32f#,32f#,32f#,8b.,8f#6.,32e6,32d#6,32c#6,8b6.,16f#6.,\
 32e6,32d#6,32c#6,8b6.,16f#6.,32e6,32d#6,32e6,8c#6.,\
 32f#,32f#,32f#,8b.,8f#6.,32e6,32d#6,32c#6,8b6.,16f#6.,\
-32e6,32d#6,32c#6,8b6.,16f#6.,32e6,32d#6,32e6,8c#6"
-impossiblemission = "ImpossibleMission:d=16,o=6,b=95:\
+32e6,32d#6,32c#6,8b6.,16f#6.,32e6,32d#6,32e6,8c#6",
+    "impossiblemission": "ImpossibleMission:d=16,o=6,b=95:\
 32d,32d#,32d,32d#,32d,32d#,32d,32d#,32d,32d,32d#,32e,32f,32f#,32g,\
 g,8p,g,8p,a#,p,c7,p,g,8p,g,8p,f,p,f#,p,g,8p,g,8p,a#,p,c7,p,g,8p,g,8p,\
 f,p,f#,p,a#,g,2d,32p,a#,g,2c#,32p,a#,g,2c,a#5,8c,2p,32p,a#5,g5,2f#,\
 32p,a#5,g5,2f,32p,a#5,g5,2e,d#,8d"
-class Buzzer:
+}
+class BuzzerPTK:
     def __init__(self, pin):
         self.buzzer = PWM(Pin(pin))
         self.buzzer.duty_u16(0)

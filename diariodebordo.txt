@@ -45,55 +45,10 @@
 
 
 # RICARDO é o responsável por aqui
-# import time
-import random
-import os
-
-# Limpa o terminal
-def clear():
-    os.system('cls' if os.name == 'nt' else 'clear')
-
-# "Confetes" simples
-confetti = ["✨", "🎉", "🎊", "⭐", "💥", "🌈", "*", "+", ".", "o"]
-
-messages = [
-    "Você é capaz de coisas incríveis.",
-    "Hoje pode ser o dia que tudo muda.",
-    "Continue — você está mais perto do que imagina.",
-    "Pequenos passos ainda te levam longe.",
-    "Algo bom vai te surpreender em breve.",
-    "Confie no processo.",
-    "Você tem um potencial enorme escondido aí."
-]
-
-def animation():
-    clear()
-    width = 40
-    height = 10
-
-    for _ in range(25):
-        clear()
-        for _ in range(height):
-            line = ""
-            for _ in range(width):
-                if random.random() < 0.08:
-                    line += random.choice(confetti)
-                else:
-                    line += " "
-            print(line)
-        time.sleep(0.12)
-
-def reveal_message():
-    clear()
-    print("\n" * 3)
-    print(" " * 5 + "SURPRESA PARA VOCÊ!\n")
-    time.sleep(1)
-    print(" " * 5 + random.choice(messages))
-    print("\n" * 2)
-
-if __name__ == "__main__":
-    animation()
-    reveal_message()
-
-# ###################
+# 
+#
+#
+#
+#
+# #####################
 

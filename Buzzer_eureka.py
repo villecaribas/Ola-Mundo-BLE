@@ -55,7 +55,12 @@ class BuzzerPTK:
     def toque(self, song):
         self._parar = False  # reset
 
-        name, settings, notes = song.split(":")
+        song = musicas.get(song, song)
+        parts = song.split(":", 2)
+        if len(parts) != 3:
+            raise ValueError("musica invalida; use chave cadastrada ou RTTTL")
+
+        _, settings, notes = parts
         settings = settings.split(",")
 
         default_duration = 4
@@ -85,6 +90,7 @@ class BuzzerPTK:
             octave = default_octave
             dotted = False
             freq = 0
+            key = None
 
             i = 0
 
@@ -114,7 +120,7 @@ class BuzzerPTK:
                     freq = self._freq_com_oitava(base_freq, octave)
 
             # oitava explícita (ex: d6)
-            if i < len(note) and note[i].isdigit():
+            if key is not None and i < len(note) and note[i].isdigit():
                 octave = int(note[i])
                 freq = self._freq_com_oitava(self.NOTES.get(key, 0), octave)
                 i += 1

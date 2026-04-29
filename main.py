@@ -90,12 +90,17 @@ class BLEServer:
             
             # Buzzer - Murilo Santos Bezerra
             elif cmd.startswith("pwb;"):
-                musica = cmd[4:]
-                for nome in musicas.keys():
-                    if musica == nome:
-                        buzzer_eureka.toque(nome)                       
-                    if not any(musica == nome for nome in musicas.keys()):
-                        print(f"(← {musica}) música não encontrada)")
+                musica = cmd[4:].strip().lower()
+                song = musicas.get(musica)
+
+                if song is None:
+                    print(f"(← {musica}) música não encontrada")
+                else:
+                    try:
+                        print(f"(← {cmd}) TOCA {musica}")
+                        buzzer_eureka.toque(song)
+                    except Exception as e:
+                        print(f"(← {cmd}) erro ao tocar música: {e}")
                 
             else:
                 print(f"(← {cmd}) não reconhecido)")

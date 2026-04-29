@@ -4,6 +4,7 @@ from machine import Pin
 from micropython import const
 from EurekaServo import EurekaServo
 import Buzzer_eureka
+from Buzzer_eureka import musicas
 # import led_eureka
 from led_eureka import LEDPTK
     

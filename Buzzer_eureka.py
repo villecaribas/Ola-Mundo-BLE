@@ -52,7 +52,7 @@ class BuzzerPTK:
         time.sleep(duration)
         self.buzzer.duty_u16(0)
 
-    def toque(self, song):
+    def play(self, song):
         self._parar = False  # reset
 
         song = musicas.get(song, song)

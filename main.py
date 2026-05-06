@@ -90,18 +90,18 @@ class BLEServer:
             
             # Buzzer - Murilo Santos Bezerra
             elif cmd.startswith("pwb;"):
-                musica = cmd[4:].strip().lower()
-                song = musicas.get(musica)
-
-                if song is None:
-                    print(f"(← {musica}) música não encontrada")
-                else:
-                    try:
-                        print(f"(← {cmd}) TOCA {musica}")
-                        buzzer_eureka.toque(song)
-                    except Exception as e:
-                        print(f"(← {cmd}) erro ao tocar música: {e}")
+                song = cmd[4:].strip().lower()
                 
+                if song in tuple(musicas.keys()):
+                    print(f"(← {cmd}) TOCA MUSICA: {song}")
+                    buzzer_eureka.toque(musicas[song])
+
+                else:
+                    print(f"(← {cmd[4:]}) musica '{song}' não encontrada. Use uma das seguintes chaves:", end=" ")
+                    for key in musicas.keys():
+                        print(f"'{key}'", end=" ")
+                    print()
+                    
             else:
                 print(f"(← {cmd}) não reconhecido)")
 

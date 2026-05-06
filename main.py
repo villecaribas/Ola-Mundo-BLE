@@ -7,7 +7,7 @@ from EurekaServo import EurekaServo
 import Buzzer_eureka
 # import led_eureka
 from led_eureka import LEDPTK
-    
+import Motor_DC
 #LED BUITIN
 led = LEDPTK(15)  # LED conectado ao pino 2
 servoPTK = EurekaServo(26)
@@ -99,6 +99,106 @@ class BLEServer:
                 
             else:
                 print(f"(← {cmd}) não reconhecido)")
+from machine import Pin, PWM
+import bluetooth
+import time
+# Certifique-se de que o arquivo ble_simple_peripheral.py esteja no ESP32
+from ble_simple_peripheral import BLESimplePeripheral
+
+# --- Suas classes (MotorDC e MotorBLE) aqui ou importadas ---
+# (Mantenha as definições de classe que você postou acima)
+
+def main():
+    try:
+        # 1. Configuração do Motor (ajuste os pinos se necessário)
+        # Exemplo: PWM no pino 4, Direção no pino 27
+        meu_motor = MotorDC(pin_pwm=4, pin_dir=27)
+
+        # 2. Configuração do Bluetooth
+        controle_ble = MotorBLE(meu_motor)
+
+        print("Sistema pronto. Aguardando conexão Bluetooth...")
+
+        # 3. Loop Principal
+        while True:
+            # O método loop que você criou verifica se há novos comandos
+            controle_ble.loop()
+            
+            # Pequena pausa para não sobrecarregar a CPU
+            time.sleep_ms(10)
+
+    except Exception as e:
+        print("Erro crítico no sistema:", e)
+    finally:
+        # Segurança: Para o motor se o script travar ou for interrompido
+        try:
+            meu_motor.parar()
+        except:
+            pass
+from machine import Pin, PWM
+import bluetooth
+import time
+# Certifique-se de que o arquivo ble_simple_peripheral.py esteja no ESP32
+from ble_simple_peripheral import BLESimplePeripheral
+
+# --- Suas classes (MotorDC e MotorBLE) aqui ou importadas ---
+# (Mantenha as definições de classe que você postou acima)
+
+def main():
+    try:
+        # 1. Configuração do Motor (ajuste os pinos se necessário)
+        # Exemplo: PWM no pino 4, Direção no pino 27
+        meu_motor = MotorDC(pin_pwm=4, pin_dir=27)
+
+        # 2. Configuração do Bluetooth
+        controle_ble = MotorBLE(meu_motor)
+
+        print("Sistema pronto. Aguardando conexão Bluetooth...")
+
+        # 3. Loop Principal
+        while True:
+            # O método loop que você criou verifica se há novos comandos
+            controle_ble.loop()
+            
+            # Pequena pausa para não sobrecarregar a CPU
+            time.sleep_ms(10)
+
+    except Exception as e:
+        print("Erro crítico no sistema:", e)
+    finally:
+        # Segurança: Para o motor se o script travar ou for interrompido
+        try:
+            meu_motor.parar()
+        except:
+            pass
+
+
+# Inicialização
+m = MotorDC(4, 27)
+sp = BLESimplePeripheral(bluetooth.BLE(), name="ESP32_MOTOR")
+
+print("Rodando...")
+
+while True:
+    if sp.is_connected() and sp.any():
+        try:
+            data = sp.read().decode().strip().split()
+            cmd = data[0].upper()
+            
+            if cmd == "F":
+                m.frente()
+                m.set_vel(int(data[1]))
+            elif cmd == "T":
+                m.tras()
+                m.set_vel(int(data[1]))
+            elif cmd == "S":
+                m.parar()
+            
+            sp.send("OK\n")
+        except:
+            sp.send("ERR\n")
+    time.sleep_ms(20)
+
 
 
 # Inicia o servidor

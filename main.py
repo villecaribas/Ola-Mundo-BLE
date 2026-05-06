@@ -90,11 +90,8 @@ class BLEServer:
             
             # Buzzer - Murilo Santos Bezerra
             elif cmd.startswith("pwb;"):
+
                 song = cmd[4:].strip().lower()
-                
-                if song == "stop":
-                    print(f"(← {cmd}) PARARNDO MÚSICA: {song}")
-                    buzzer_eureka.stop()
 
                 if song in tuple(musicas.keys()):
                     print(f"(← {cmd}) TOCANDO MÚSICA: {song}")
@@ -106,6 +103,9 @@ class BLEServer:
                         print(f"'{key}'", end=" ")
                     print()
             # Buzzer - Murilo Santos Bezerra        
+            elif cmd == "stop;buzzer":
+                print(f"(← {cmd}) PARANDO MÚSICA")
+                buzzer_eureka.stop()
             else:
                 print(f"(← {cmd}) não reconhecido)")
 

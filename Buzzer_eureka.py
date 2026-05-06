@@ -6,172 +6,205 @@ try:
 except ImportError:
     _thread = None
 
+
+MEGALOVANIA = (
+    "D,D,D6,P,A,8P,G#,P,G,P,F,P,D,F,G,"
+    "C,C,D6,P,A,8P,G#,P,G,P,F,P,D,F,G,"
+    "B4,B4,D6,P,A,8P,G#,P,G,P,F,P,D,F,G,"
+    "A#4,A#4,D6,P,A,8P,G#,P,G,P,F,P,D,F,G"
+)
+
+STARWARS = (
+    "32P,32F#,32F#,32F#,8B.,8F#6.,32E6,32D#6,32C#6,8B6.,16F#6.,"
+    "32E6,32D#6,32C#6,8B6.,16F#6.,32E6,32D#6,32E6,8C#6.,"
+    "32F#,32F#,32F#,8B.,8F#6.,32E6,32D#6,32C#6,8B6.,16F#6.,"
+    "32E6,32D#6,32C#6,8B6.,16F#6.,32E6,32D#6,32E6,8C#6"
+)
+
+IMPOSSIBLEMISSION = (
+    "32D,32D#,32D,32D#,32D,32D#,32D,32D#,32D,32D,32D#,32E,32F,32F#,32G,"
+    "G,8P,G,8P,A#,P,C7,P,G,8P,G,8P,F,P,F#,P,G,8P,G,8P,A#,P,C7,P,G,8P,G,8P,"
+    "F,P,F#,P,A#,G,2D,32P,A#,G,2C#,32P,A#,G,2C,A#5,8C,2P,32P,A#5,G5,2F#,"
+    "32P,A#5,G5,2F,32P,A#5,G5,2E,D#,8D"
+)
+
 musicas = {
-    "megalovania": "Megalovania:d=4,o=5,b=120:\
-d,d,d6,p,a,8p,g#,p,g,p,f,p,d,f,g,\
-c,c,d6,p,a,8p,g#,p,g,p,f,p,d,f,g,\
-b4,b4,d6,p,a,8p,g#,p,g,p,f,p,d,f,g,\
-a#4,a#4,d6,p,a,8p,g#,p,g,p,f,p,d,f,g",
-    "starwars": "StarWars:d=4,o=5,b=45:\
-32p,32f#,32f#,32f#,8b.,8f#6.,32e6,32d#6,32c#6,8b6.,16f#6.,\
-32e6,32d#6,32c#6,8b6.,16f#6.,32e6,32d#6,32e6,8c#6.,\
-32f#,32f#,32f#,8b.,8f#6.,32e6,32d#6,32c#6,8b6.,16f#6.,\
-32e6,32d#6,32c#6,8b6.,16f#6.,32e6,32d#6,32e6,8c#6",
-    "impossiblemission": "ImpossibleMission:d=16,o=6,b=95:\
-32d,32d#,32d,32d#,32d,32d#,32d,32d#,32d,32d,32d#,32e,32f,32f#,32g,\
-g,8p,g,8p,a#,p,c7,p,g,8p,g,8p,f,p,f#,p,g,8p,g,8p,a#,p,c7,p,g,8p,g,8p,\
-f,p,f#,p,a#,g,2d,32p,a#,g,2c#,32p,a#,g,2c,a#5,8c,2p,32p,a#5,g5,2f#,\
-32p,a#5,g5,2f,32p,a#5,g5,2e,d#,8d"
+    "megalovania": {
+        "notes": MEGALOVANIA,
+        "bpm": 120,
+        "default_dur": 16,
+        "default_oct": 5,
+    },
+    "starwars": {
+        "notes": STARWARS,
+        "bpm": 45,
+        "default_dur": 4,
+        "default_oct": 5,
+    },
+    "impossiblemission": {
+        "notes": IMPOSSIBLEMISSION,
+        "bpm": 95,
+        "default_dur": 16,
+        "default_oct": 6,
+    },
 }
+
+
 class BuzzerPTK:
     DUTY = 30000
     SLICE_MS = 20
     NOTES = {
-        "c": 262, "d": 294, "e": 330, "f": 349,
-        "g": 392, "a": 440, "b": 494,
-        "c#": 277, "d#": 311, "f#": 370,
-        "g#": 415, "a#": 466
+        "c": 262,
+        "d": 294,
+        "e": 330,
+        "f": 349,
+        "g": 392,
+        "a": 440,
+        "b": 494,
+        "c#": 277,
+        "d#": 311,
+        "f#": 370,
+        "g#": 415,
+        "a#": 466,
     }
 
     def __init__(self, pin):
-        self.buzzer = PWM(Pin(pin))
-        self.buzzer.duty_u16(0)
-        self._parar = True
-        self._playback_id = 0
+        self.pwm = PWM(Pin(pin))
+        self.pwm.duty_u16(0)
+        self._stop = True
+        self._pid = 0
 
     def stop(self):
-        self._parar = True
-        self._playback_id += 1
-        self.buzzer.duty_u16(0)
+        self._stop = True
+        self._pid += 1
+        self.pwm.duty_u16(0)
 
-    def _is_playback_active(self, playback_id):
-        return not self._parar and playback_id == self._playback_id
+    @staticmethod
+    def _octave_freq(base, octave):
+        if base == 0:
+            return 0
+        if octave >= 4:
+            return base << (octave - 4)
+        return base >> (4 - octave)
 
-    def _freq_com_oitava(self, freq, octave):
-        return int(freq * (2 ** (octave - 4)))
+    def _alive(self, pid):
+        return not self._stop and pid == self._pid
 
-    def _sleep_interruptible(self, duration, playback_id):
-        remaining_ms = int(duration * 1000)
+    def _sleep_ms(self, ms, pid):
+        while ms > 0 and self._alive(pid):
+            step = min(ms, self.SLICE_MS)
+            time.sleep_ms(step)
+            ms -= step
+        return self._alive(pid)
 
-        while remaining_ms > 0 and self._is_playback_active(playback_id):
-            wait_ms = self.SLICE_MS if remaining_ms > self.SLICE_MS else remaining_ms
-            time.sleep_ms(wait_ms)
-            remaining_ms -= wait_ms
-
-        return self._is_playback_active(playback_id)
-
-    def _play_tone(self, freq, duration, playback_id):
-        if not self._is_playback_active(playback_id):
+    def _tone(self, freq, ms, pid):
+        if not self._alive(pid):
             return False
 
-        if freq != 0:
-            self.buzzer.freq(freq)
-            self.buzzer.duty_u16(self.DUTY)
+        if freq:
+            self.pwm.freq(freq)
+            self.pwm.duty_u16(self.DUTY)
+        else:
+            self.pwm.duty_u16(0)
+
+        ok = self._sleep_ms(ms, pid)
+
+        if pid == self._pid:
+            self.pwm.duty_u16(0)
+
+        return ok
+
+    def _run(self, notes_str, bpm, default_dur, default_oct, pid):
+        whole_ms = 240000 // bpm
 
         try:
-            return self._sleep_interruptible(duration, playback_id)
-        finally:
-            if playback_id == self._playback_id:
-                self.buzzer.duty_u16(0)
-
-    def _play_song(self, song, playback_id):
-        song = musicas.get(song, song)
-        parts = song.split(":", 2)
-        if len(parts) != 3:
-            raise ValueError("musica invalida; use chave cadastrada ou RTTTL")
-
-        _, settings, notes = parts
-        settings = settings.split(",")
-
-        default_duration = 4
-        default_octave = 5
-        bpm = 120
-
-        for s in settings:
-            if s.startswith("d="):
-                default_duration = int(s[2:])
-            elif s.startswith("o="):
-                default_octave = int(s[2:])
-            elif s.startswith("b="):
-                bpm = int(s[2:])
-
-        whole_note = (60 / bpm) * 4
-        notes = notes.replace("\n", "").split(",")
-
-        try:
-            for note in notes:
-                if not self._is_playback_active(playback_id):
+            for tok in notes_str.split(","):
+                if not self._alive(pid):
                     break
 
-                note = note.strip()
-                if not note:
+                tok = tok.strip()
+                if not tok:
                     continue
 
-                duration = default_duration
-                octave = default_octave
-                dotted = False
+                dur = default_dur
+                octv = default_oct
                 freq = 0
-                key = None
-
                 i = 0
 
-                # duração (ex: 8d, 16c)
-                num = ""
-                while i < len(note) and note[i].isdigit():
-                    num += note[i]
-                    i += 1
-                if num:
-                    duration = int(num)
+                j = i
+                while j < len(tok) and tok[j].isdigit():
+                    j += 1
+                if j > i:
+                    dur = int(tok[i:j])
+                    i = j
 
-                # pausa
-                if i < len(note) and note[i] == "p":
-                    freq = 0
+                if i < len(tok) and tok[i].lower() == "p":
                     i += 1
                 else:
-                    # nota
-                    if i < len(note):
-                        if i + 1 < len(note) and note[i + 1] == "#":
-                            key = note[i:i+2]
+                    if i < len(tok):
+                        if i + 1 < len(tok) and tok[i + 1] == "#":
+                            key = tok[i:i + 2].lower()
                             i += 2
                         else:
-                            key = note[i]
+                            key = tok[i].lower()
                             i += 1
 
-                        base_freq = self.NOTES.get(key, 0)
-                        freq = self._freq_com_oitava(base_freq, octave)
+                        base = self.NOTES.get(key, 0)
 
-                # oitava explícita (ex: d6)
-                if key is not None and i < len(note) and note[i].isdigit():
-                    octave = int(note[i])
-                    freq = self._freq_com_oitava(self.NOTES.get(key, 0), octave)
-                    i += 1
+                        j = i
+                        while j < len(tok) and tok[j].isdigit():
+                            j += 1
+                        if j > i:
+                            octv = int(tok[i:j])
+                            i = j
 
-                # ponto (d.)
-                if i < len(note) and note[i] == ".":
-                    dotted = True
+                        freq = self._octave_freq(base, octv)
 
-                note_duration = whole_note / duration
+                dotted = i < len(tok) and tok[i] == "."
+                note_ms = whole_ms // dur
                 if dotted:
-                    note_duration *= 1.5
+                    note_ms = note_ms * 3 // 2
 
-                if not self._play_tone(freq, note_duration, playback_id):
+                if not self._tone(freq, note_ms, pid):
                     break
         finally:
-            if playback_id == self._playback_id:
-                self.buzzer.duty_u16(0)
-                self._parar = True
+            if pid == self._pid:
+                self.pwm.duty_u16(0)
+                self._stop = True
 
-    def play(self, song):
+    def _resolve_song(self, notes, bpm, default_dur, default_oct):
+        config = musicas.get(notes)
+        if config is None:
+            return notes, bpm, default_dur, default_oct
+
+        return (
+            config["notes"],
+            config["bpm"],
+            config["default_dur"],
+            config["default_oct"],
+        )
+
+    def play(self, notes=MEGALOVANIA, bpm=120, default_dur=16, default_oct=5):
+        notes, bpm, default_dur, default_oct = self._resolve_song(
+            notes, bpm, default_dur, default_oct
+        )
+
         self.stop()
-        self._parar = False
-        self._playback_id += 1
-        playback_id = self._playback_id
+        self._stop = False
+        self._pid += 1
+        pid = self._pid
 
-        if _thread is None:
-            self._play_song(song, playback_id)
-            return
+        args = (notes, bpm, default_dur, default_oct, pid)
+        if _thread:
+            try:
+                _thread.start_new_thread(self._run, args)
+                return
+            except Exception:
+                pass
 
-        try:
-            _thread.start_new_thread(self._play_song, (song, playback_id))
-        except Exception:
-            self._play_song(song, playback_id)
+        self._run(*args)
+
+
+if __name__ == "__main__":
+    buzzer = BuzzerPTK(pin=15)
+    buzzer.play()

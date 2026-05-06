@@ -173,31 +173,6 @@ def main():
             pass
 
 
-# Inicialização
-m = MotorDC(4, 27)
-sp = BLESimplePeripheral(bluetooth.BLE(), name="ESP32_MOTOR")
-
-print("Rodando...")
-
-while True:
-    if sp.is_connected() and sp.any():
-        try:
-            data = sp.read().decode().strip().split()
-            cmd = data[0].upper()
-            
-            if cmd == "F":
-                m.frente()
-                m.set_vel(int(data[1]))
-            elif cmd == "T":
-                m.tras()
-                m.set_vel(int(data[1]))
-            elif cmd == "S":
-                m.parar()
-            
-            sp.send("OK\n")
-        except:
-            sp.send("ERR\n")
-    time.sleep_ms(20)
 
 
 

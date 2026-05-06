@@ -1,6 +1,11 @@
 from machine import Pin, PWM
 import time
 
+try:
+    import _thread
+except ImportError:
+    _thread = None
+
 musicas = {
     "megalovania": "Megalovania:d=4,o=5,b=120:\
 d,d,d6,p,a,8p,g#,p,g,p,f,p,d,f,g,\
@@ -19,42 +24,57 @@ f,p,f#,p,a#,g,2d,32p,a#,g,2c#,32p,a#,g,2c,a#5,8c,2p,32p,a#5,g5,2f#,\
 32p,a#5,g5,2f,32p,a#5,g5,2e,d#,8d"
 }
 class BuzzerPTK:
+    DUTY = 30000
+    SLICE_MS = 20
+    NOTES = {
+        "c": 262, "d": 294, "e": 330, "f": 349,
+        "g": 392, "a": 440, "b": 494,
+        "c#": 277, "d#": 311, "f#": 370,
+        "g#": 415, "a#": 466
+    }
+
     def __init__(self, pin):
         self.buzzer = PWM(Pin(pin))
         self.buzzer.duty_u16(0)
-        self._parar = False
-
-        # Frequências base (oitava 4)
-        self.NOTES = {
-            "c": 262, "d": 294, "e": 330, "f": 349,
-            "g": 392, "a": 440, "b": 494,
-            "c#": 277, "d#": 311, "f#": 370,
-            "g#": 415, "a#": 466
-        }
+        self._parar = True
+        self._playback_id = 0
 
     def stop(self):
         self._parar = True
+        self._playback_id += 1
         self.buzzer.duty_u16(0)
+
+    def _is_playback_active(self, playback_id):
+        return not self._parar and playback_id == self._playback_id
 
     def _freq_com_oitava(self, freq, octave):
         return int(freq * (2 ** (octave - 4)))
 
-    def _play_tone(self, freq, duration):
-        if self._parar:
-            return
+    def _sleep_interruptible(self, duration, playback_id):
+        remaining_ms = int(duration * 1000)
 
-        if freq == 0:
-            time.sleep(duration)
-            return
+        while remaining_ms > 0 and self._is_playback_active(playback_id):
+            wait_ms = self.SLICE_MS if remaining_ms > self.SLICE_MS else remaining_ms
+            time.sleep_ms(wait_ms)
+            remaining_ms -= wait_ms
 
-        self.buzzer.freq(freq)
-        self.buzzer.duty_u16(30000)
-        time.sleep(duration)
-        self.buzzer.duty_u16(0)
+        return self._is_playback_active(playback_id)
 
-    def play(self, song):
-        self._parar = False  # reset
+    def _play_tone(self, freq, duration, playback_id):
+        if not self._is_playback_active(playback_id):
+            return False
 
+        if freq != 0:
+            self.buzzer.freq(freq)
+            self.buzzer.duty_u16(self.DUTY)
+
+        try:
+            return self._sleep_interruptible(duration, playback_id)
+        finally:
+            if playback_id == self._playback_id:
+                self.buzzer.duty_u16(0)
+
+    def _play_song(self, song, playback_id):
         song = musicas.get(song, song)
         parts = song.split(":", 2)
         if len(parts) != 3:
@@ -78,59 +98,80 @@ class BuzzerPTK:
         whole_note = (60 / bpm) * 4
         notes = notes.replace("\n", "").split(",")
 
-        for note in notes:
-            if self._parar:
-                break
+        try:
+            for note in notes:
+                if not self._is_playback_active(playback_id):
+                    break
 
-            note = note.strip()
-            if not note:
-                continue
+                note = note.strip()
+                if not note:
+                    continue
 
-            duration = default_duration
-            octave = default_octave
-            dotted = False
-            freq = 0
-            key = None
-
-            i = 0
-
-            # duração (ex: 8d, 16c)
-            num = ""
-            while i < len(note) and note[i].isdigit():
-                num += note[i]
-                i += 1
-            if num:
-                duration = int(num)
-
-            # pausa
-            if i < len(note) and note[i] == 'p':
+                duration = default_duration
+                octave = default_octave
+                dotted = False
                 freq = 0
-                i += 1
-            else:
-                # nota
-                if i < len(note):
-                    if i+1 < len(note) and note[i+1] == '#':
-                        key = note[i:i+2]
-                        i += 2
-                    else:
-                        key = note[i]
-                        i += 1
+                key = None
 
-                    base_freq = self.NOTES.get(key, 0)
-                    freq = self._freq_com_oitava(base_freq, octave)
+                i = 0
 
-            # oitava explícita (ex: d6)
-            if key is not None and i < len(note) and note[i].isdigit():
-                octave = int(note[i])
-                freq = self._freq_com_oitava(self.NOTES.get(key, 0), octave)
-                i += 1
+                # duração (ex: 8d, 16c)
+                num = ""
+                while i < len(note) and note[i].isdigit():
+                    num += note[i]
+                    i += 1
+                if num:
+                    duration = int(num)
 
-            # ponto (d.)
-            if i < len(note) and note[i] == '.':
-                dotted = True
+                # pausa
+                if i < len(note) and note[i] == "p":
+                    freq = 0
+                    i += 1
+                else:
+                    # nota
+                    if i < len(note):
+                        if i + 1 < len(note) and note[i + 1] == "#":
+                            key = note[i:i+2]
+                            i += 2
+                        else:
+                            key = note[i]
+                            i += 1
 
-            note_duration = whole_note / duration
-            if dotted:
-                note_duration *= 1.5
+                        base_freq = self.NOTES.get(key, 0)
+                        freq = self._freq_com_oitava(base_freq, octave)
 
-            self._play_tone(freq, note_duration)
+                # oitava explícita (ex: d6)
+                if key is not None and i < len(note) and note[i].isdigit():
+                    octave = int(note[i])
+                    freq = self._freq_com_oitava(self.NOTES.get(key, 0), octave)
+                    i += 1
+
+                # ponto (d.)
+                if i < len(note) and note[i] == ".":
+                    dotted = True
+
+                note_duration = whole_note / duration
+                if dotted:
+                    note_duration *= 1.5
+
+                if not self._play_tone(freq, note_duration, playback_id):
+                    break
+        finally:
+            if playback_id == self._playback_id:
+                self.buzzer.duty_u16(0)
+                self._parar = True
+
+    def play(self, song):
+        self.stop()
+        self._parar = False
+        self._playback_id += 1
+        playback_id = self._playback_id
+
+        if _thread is None:
+            self._play_song(song, playback_id)
+            return
+
+        try:
+            _thread.start_new_thread(self._play_song, (song, playback_id))
+        except Exception:
+            self._play_song(song, playback_id)

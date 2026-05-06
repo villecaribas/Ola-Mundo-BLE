@@ -93,15 +93,16 @@ class BLEServer:
 
                 song = cmd[4:].strip().lower()
 
-                if song in tuple(musicas.keys()):
+                if song in musicas:
                     print(f"(← {cmd}) TOCANDO MÚSICA: {song}")
-                    buzzer_eureka.play(musicas[song])
+                    buzzer_eureka.play(song)
 
                 else:
                     print(f"(← {cmd[4:]}) musica '{song}' não encontrada. Use uma das seguintes chaves:", end=" ")
                     for key in musicas.keys():
                         print(f"'{key}'", end=" ")
                     print()
+                    
             # Buzzer - Murilo Santos Bezerra        
             elif cmd == "stop;buzzer":
                 print(f"(← {cmd}) PARANDO MÚSICA")

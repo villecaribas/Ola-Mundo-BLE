@@ -174,7 +174,23 @@ def main():
 
 
 
+# Setup rápido
+nomeDoLino = "ESP32_MOTOR"
+motor = Motor_DC.MotorDC(4, 27)
+sp = BLESimplePeripheral(bluetooth.BLE(), name=nomeDoLino)
 
+# Função que processa os comandos (encaixe no seu sistema)
+def on_rx(v):
+    v = v.decode().strip().lower()
+    try:
+        if v.startswith("f"): # ex: f 800
+            motor.frente(); motor.set_velocidade(int(v.split()[1]))
+        elif v.startswith("t"): # ex: t 800
+            motor.tras(); motor.set_velocidade(int(v.split()[1]))
+        elif v == "s":
+            motor.parar()
+    except:
+        pass
 
 # Inicia o servidor
 ble_server = BLEServer(nomeDoLino)

@@ -5,9 +5,10 @@ from micropython import const
 from Botao_eureka import Botao
 from EurekaServo import EurekaServo
 import Buzzer_eureka
+from Buzzer_eureka import musicas
 # import led_eureka
 from led_eureka import LEDPTK
-    
+import Motor_DC
 #LED BUITIN
 led = LEDPTK(15)  # LED conectado ao pino 2
 servoPTK = EurekaServo(26)
@@ -119,16 +120,117 @@ class BLEServer:
             
             # Buzzer - Murilo Santos Bezerra
             elif cmd.startswith("pwb;"):
-                musica = cmd[4:]
-                for nome in musicas.keys():
-                    if musica == nome:
-                        buzzer_eureka.toque(nome)                       
-                    if not any(musica == nome for nome in musicas.keys()):
-                        print(f"(← {musica}) música não encontrada)")
-                
+
+                song = cmd[4:].strip().lower()
+
+                if song in musicas:
+                    print(f"(← {cmd}) TOCANDO MÚSICA: {song}")
+                    buzzer_eureka.play(song)
+
+                else:
+                    print(f"(← {cmd[4:]}) musica '{song}' não encontrada. Use uma das seguintes chaves:", end=" ")
+                    for key in musicas.keys():
+                        print(f"'{key}'", end=" ")
+                    print()
+                    
+            # Buzzer - Murilo Santos Bezerra        
+            elif cmd == "stop;buzzer":
+                print(f"(← {cmd}) PARANDO MÚSICA")
+                buzzer_eureka.stop()
             else:
                 print(f"(← {cmd}) não reconhecido)")
+from machine import Pin, PWM
+import bluetooth
+import time
+# Certifique-se de que o arquivo ble_simple_peripheral.py esteja no ESP32
+from ble_simple_peripheral import BLESimplePeripheral
 
+# --- Suas classes (MotorDC e MotorBLE) aqui ou importadas ---
+# (Mantenha as definições de classe que você postou acima)
+
+def main():
+    try:
+        # 1. Configuração do Motor (ajuste os pinos se necessário)
+        # Exemplo: PWM no pino 4, Direção no pino 27
+        meu_motor = MotorDC(pin_pwm=4, pin_dir=27)
+
+        # 2. Configuração do Bluetooth
+        controle_ble = MotorBLE(meu_motor)
+
+        print("Sistema pronto. Aguardando conexão Bluetooth...")
+
+        # 3. Loop Principal
+        while True:
+            # O método loop que você criou verifica se há novos comandos
+            controle_ble.loop()
+            
+            # Pequena pausa para não sobrecarregar a CPU
+            time.sleep_ms(10)
+
+    except Exception as e:
+        print("Erro crítico no sistema:", e)
+    finally:
+        # Segurança: Para o motor se o script travar ou for interrompido
+        try:
+            meu_motor.parar()
+        except:
+            pass
+from machine import Pin, PWM
+import bluetooth
+import time
+# Certifique-se de que o arquivo ble_simple_peripheral.py esteja no ESP32
+from ble_simple_peripheral import BLESimplePeripheral
+
+# --- Suas classes (MotorDC e MotorBLE) aqui ou importadas ---
+# (Mantenha as definições de classe que você postou acima)
+
+def main():
+    try:
+        # 1. Configuração do Motor (ajuste os pinos se necessário)
+        # Exemplo: PWM no pino 4, Direção no pino 27
+        meu_motor = MotorDC(pin_pwm=4, pin_dir=27)
+
+        # 2. Configuração do Bluetooth
+        controle_ble = MotorBLE(meu_motor)
+
+        print("Sistema pronto. Aguardando conexão Bluetooth...")
+
+        # 3. Loop Principal
+        while True:
+            # O método loop que você criou verifica se há novos comandos
+            controle_ble.loop()
+            
+            # Pequena pausa para não sobrecarregar a CPU
+            time.sleep_ms(10)
+
+    except Exception as e:
+        print("Erro crítico no sistema:", e)
+    finally:
+        # Segurança: Para o motor se o script travar ou for interrompido
+        try:
+            meu_motor.parar()
+        except:
+            pass
+
+
+
+# Setup rápido
+nomeDoLino = "ESP32_MOTOR"
+motor = Motor_DC.MotorDC(4, 27)
+sp = BLESimplePeripheral(bluetooth.BLE(), name=nomeDoLino)
+
+# Função que processa os comandos (encaixe no seu sistema)
+def on_rx(v):
+    v = v.decode().strip().lower()
+    try:
+        if v.startswith("f"): # ex: f 800
+            motor.frente(); motor.set_velocidade(int(v.split()[1]))
+        elif v.startswith("t"): # ex: t 800
+            motor.tras(); motor.set_velocidade(int(v.split()[1]))
+        elif v == "s":
+            motor.parar()
+    except:
+        pass
 
 # Inicia o servidor
 ble_server = BLEServer(nomeDoLino)

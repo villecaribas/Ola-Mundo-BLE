@@ -15,7 +15,7 @@ buzzer_eureka = Buzzer_eureka.BuzzerPTK(32) # Buzzer conectado ao pino 0
 # UUIDs para o serviço e característica (use UUIDs personalizados ou padrões)
 _IRQ_CENTRAL_CONNECT = const(1)
 _IRQ_CENTRAL_DISCONNECT = const(2)
-_IRQ_GATT_WRITE = const(3)
+_IRQ_CHEGOU_DADOS = const(3)
 
 # Flag para habilitar o BLE
 _FLAG_READ = const(0x0002)
@@ -44,6 +44,35 @@ class BLEServer:
         name = bytes(name, 'utf-8')
         self._ble.gap_advertise(100, adv_data=b'\x02\x01\x06' + chr(len(name) + 1) + '\x09' + name)
 
+    def enviar(self, mensagem):
+            """
+            Envia uma mensagem para todos os clientes Bluetooth conectados.
+            Usa BLE Notify.
+            """
+
+            if not self._connections:
+                print("\033[1;31mNenhum cliente conectado para enviar dados.\033[0m")
+                return False
+
+            if isinstance(mensagem, str):
+                dados = mensagem.encode("utf-8")
+            else:
+                dados = mensagem
+
+            for conn_handle in self._connections.copy():
+                try:
+                    self._ble.gatts_notify(conn_handle, self._handle, dados)
+                    print(f"\033[1;32m(→ {mensagem}) enviado para cliente BLE.\033[0m")
+                except Exception as e:
+                    print(f"\033[1;31mErro ao enviar para cliente {conn_handle}: {e}\033[0m")
+                    try:
+                        self._connections.remove(conn_handle)
+                    except:
+                        pass
+
+            return True
+
+
     def _irq(self, event, data):
         if event == _IRQ_CENTRAL_CONNECT:
             conn_handle, _, _ = data
@@ -57,7 +86,7 @@ class BLEServer:
             self._advertise(nomeDoLino)  # Reanuncia
             print("\033[1;34m"+nomeDoLino+"\033[0m está pronto reconectar.")
 
-        elif event == _IRQ_GATT_WRITE:
+        elif event == _IRQ_CHEGOU_DADOS:
             conn_handle, value_handle = data
             value = self._ble.gatts_read(self._handle)
             cmd = value.decode('utf-8').strip()

@@ -205,3 +205,7 @@ def on_rx(v):
 
 # Inicia o servidor
 ble_server = BLEServer(nomeDoLino)
+
+
+
+# pietro erureka
